@@ -63,6 +63,25 @@ def ajuste(x, y, xlabel, ylabel, label, col):
 
     return ufloat(ppot[0], perr[0])
 
+def tabla_latex(tabla, ind, col):
+    """
+    Prints an array in latex format
+    Args:
+        tabla: array to print in latex format (formed as an array of the variables (arrays) that want to be displayed)
+        ind: list with index names
+        col: list with columns names
+        r: number of decimals to be rounded
+        
+    Returns:
+        ptabla: table with the data in a pandas.Dataframe format
+    """
+    tabla = tabla.T
+    tabla = np.round(tabla, 2)
+    ptabla = pd.DataFrame(tabla, index=ind, columns=col)
+    print("Tabla en latex:\n")
+    print(ptabla.to_latex(index=False, escape=False))
+    return ptabla
+
 def main():
     datos = np.genfromtxt('datos.txt', delimiter=',')
     datos = datos[1:]
@@ -78,11 +97,25 @@ def main():
 
     tau_f_led = np.sqrt(tau_led ** 2 - tau_er_led ** 2)
     tau_f_las = np.sqrt(tau_las[1:] ** 2 - tau_er_las ** 2)
+    
+    tau_f_las_latex = []
+    tau_las_latex = []
+    
+    for i in range(len(tau_las)):
+        if i == 0:
+            tau_f_las_latex.append(0)
+            tau_las_latex.append(0)
+        else:
+            tau_f_las_latex.append(tau_f_las[i-1])
+            tau_las_latex.append(tau_las[i])
+    tau_f_las_latex = np.array(tau_f_las_latex)
+    tau_las_latex = np.array(tau_las_latex)
 
     sigma_las = tau_f_las / 2.56
     sigma_led = np.sqrt(((tau_f_led[1:] / 2.56) ** 2 - (tau_f_las / 2.56) ** 2)) * 1000
 
     br_las = 0.26 / (tau_f_las / 2.56)
+    br_las_latex = 0.26 / (tau_f_las_latex / 2.56)
     br_led = 0.26 / (tau_f_led / 2.56)
 
     datos2 = np.genfromtxt('datos2.txt', delimiter=',')
@@ -110,9 +143,12 @@ def main():
         plt.ylabel(r'$\tau$/ns')
         plt.legend()
         plt.grid()
-        plt.savefig('tau.png', dpi=720)
+        # plt.savefig('tau.png', dpi=720)
         plt.show()
-
+        
+        tab = np.array([L, tau_led, np.round(tau_f_led, 2), tau_las_latex, np.round(tau_f_las_latex, 2)], dtype=object)
+        ptabla = tabla_latex(tab, ind=['' for i in L], col=['$L$/km', '$\tau_{LED}$', '$\tau_{f, LED}$','$\tau_{laser}$', '$\tau_{f, laser}$'])
+    
     def d_laser():
         """
         Plots the temporal width for the laser as a function of the distance.
@@ -129,6 +165,9 @@ def main():
         plt.savefig('d_laser.png', dpi=720)
         plt.show()
         print('D_las = ', d_laser, 'ns/km')
+    tabla = np.array([L2, sigma_las, sigma_led])
+    ptabla = tabla_latex(tabla, ['' for i in L2], ['$L/$km', '$\sigma_{im, laser}$/ns', '$\sigma_{mat, LED}$/ps'])
+        
 
     def d_led():
         """
@@ -165,6 +204,10 @@ def main():
         plt.grid()
         plt.savefig('bitrate.png', dpi=720)
         plt.show()
+        
+        tabla = np.array([L, br_led, br_las_latex])
+        ptabla = tabla_latex(tabla, ['' for i in L], ['$L/$km', '$BR_{LED}$/bits/ns', '$BR_{laser}$/bits/ns'])
+    
 
     def alpha():
         """
@@ -189,6 +232,10 @@ def main():
         plt.show()
         print('alpha LED', alpha_led)
         print('alpha Laser', alpha_laser)
+        
+        
+        tabla = np.array([L3, p_led, p_las])
+        ptabla = tabla_latex(tabla, ['' for i in L3], ['$L/$km', '$P_{LED}$/$\mu$W', '$P_{laser}$/$\mu$W'])
 
     # Uncomment the lines below to execute the functions above
 
@@ -196,5 +243,5 @@ def main():
     # d_laser()
     # d_led()
     # BR()
-    # alpha()
+    alpha()
 main()
